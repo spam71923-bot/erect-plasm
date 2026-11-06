@@ -43,6 +43,11 @@ jobs:
             clang main.c -o ${{ matrix.artifact-name }} -framework CoreAudio -framework AudioToolbox
           fi
 
+      # Configures the MSVC shell environment so cl.exe is recognized
+      - name: Set up MSVC Developer Command Prompt (Windows Only)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
       # Windows uses MSVC (cl.exe) natively via github runners
       - name: Compile C Code (Windows Only)
         if: matrix.os == 'windows-latest'
