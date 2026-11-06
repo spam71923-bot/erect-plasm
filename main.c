@@ -2,7 +2,7 @@
 #include "dr_mp3.h"
 
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h" [1]
+#include "miniaudio.h"
 
 #include <stdio.h>
 
