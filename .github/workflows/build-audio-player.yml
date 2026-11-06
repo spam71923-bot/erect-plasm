@@ -1,0 +1,57 @@
+name: Build C MP3 Player
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact-name: play_mp3-linux
+          - os: macos-latest
+            artifact-name: play_mp3-mac
+          - os: windows-latest
+            artifact-name: play_mp3-windows.exe
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Linux requires ALSA development headers to hook into system sound drivers
+      - name: Install Dependencies (Linux Only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
+
+      # Compilation step utilizing the exact system flags specified for each OS
+      - name: Compile C Code (Linux & macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            gcc main.c -o ${{ matrix.artifact-name }} -lpthread -lm -ldl -lasound
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            clang main.c -o ${{ matrix.artifact-name }} -framework CoreAudio -framework AudioToolbox
+          fi
+
+      # Windows uses MSVC (cl.exe) natively via github runners
+      - name: Compile C Code (Windows Only)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cl.exe main.c /Fe:${{ matrix.artifact-name }} winmm.lib ole32.lib /EHsc
+
+      # Bundles the compiled binaries so you can download them directly from the execution run
+      - name: Upload Binary Artifacts
+        uses: actions/authorized/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
